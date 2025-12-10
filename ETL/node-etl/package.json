@@ -1,24 +1,18 @@
 {
-  "type": "module",
   "name": "node-etl",
   "version": "1.0.0",
-  "description": "",
+  "type": "module",
+  "description": "Supabase-safe Node.js ETL for ecommerce search analytics",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.13.2",
     "csv-parse": "^6.1.0",
-    "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
-    "fast-csv": "^5.0.5",
-    "mongoose": "^9.0.1",
-    "pg": "^8.16.3",
-    "pg-copy-streams": "^7.0.0",
-    "winston": "^3.19.0"
+    "pg": "^8.16.3"
   }
 }
