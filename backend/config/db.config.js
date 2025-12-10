@@ -1,8 +1,8 @@
 const config = { 
-	USER: "postgres",
-    HOST: "192.168.1.103",
-    DATABASE: "ecommerce_search",
-	PASSWORD: "root",
+	USER: "postgres.ggbyihqsclnbqxjabuty",
+    HOST: "aws-1-ap-south-1.pooler.supabase.com",
+    DATABASE: "postgres",
+	PASSWORD: "DGXproduction@2025",
     DIALECT: "postgres",
     PORT: "5432"
 } 
