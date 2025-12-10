@@ -1,10 +1,23 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const brandSearchVolumeController = (req, res) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {brandSearchVolumeController};
+
+
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var brandSearchVolumeService = require('../service/brandSearchVolumeService');
 
-/* GET users listing. */
+/* GET brand search volume. */
 const brandSearchVolumeController = (req, res) => {
-    userservice.getUsers();
+    brandSearchVolumeService.brandSearchVolumeService(req, res);
 }
 
-module.exports = {brandSearchVolumeController};
+module.exports = { brandSearchVolumeController };

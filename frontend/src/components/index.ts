@@ -43,4 +43,4 @@ export { SearchFailRate } from './SearchFailRate';
 export { SeasonalityTrends } from './SeasonalityTrends';
 export { SynonymMisses } from './SynonymMisses';
 export { ZeroResultsSearches } from './ZeroResultsSearches';
-export { Users } from './Users';
+// export { Users } from './Users';

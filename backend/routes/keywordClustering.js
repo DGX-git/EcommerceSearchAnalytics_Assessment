@@ -1,9 +1,24 @@
+// var express = require('express');
+// var router = express.Router();
+
+// /* GET home page. */
+// router.get('/keywordClustering', function(req, res, next) {
+//   res.render('index', { title: 'Express' });
+// });
+
+// module.exports = router;
+
+
 var express = require('express');
 var router = express.Router();
+var keywordClusteringController = require('../controller/keywordClusteringController');
+var cors = require('cors');
 
-/* GET home page. */
+router.use(cors());
+
+/* GET keyword clustering. */
 router.get('/keywordClustering', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  keywordClusteringController.keywordClusteringController(req, res, next);
 });
 
 module.exports = router;

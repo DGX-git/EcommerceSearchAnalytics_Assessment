@@ -1,10 +1,22 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const usercontroller = (req, res) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {usercontroller};
+
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var ratingSensitivityService = require('../service/ratingSensitivityService');
 
-/* GET users listing. */
-const usercontroller = (req, res) => {
-    userservice.getUsers();
+/* GET rating sensitivity. */
+const ratingSensitivityController = (req, res) => {
+    ratingSensitivityService.ratingSensitivityService(req, res);
 }
 
-module.exports = {usercontroller};
+module.exports = { ratingSensitivityController };

@@ -7,6 +7,27 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var topSearchVolumeRouter = require('./routes/topSearchVolume');
+var trendingKeywordsRouter = require('./routes/trendingKeywords');
+var attributeTrendsRouter = require('./routes/attributeTrends');
+var brandSearchVolumeRouter = require('./routes/brandSearchVolume');
+var categoryDemandRouter = require('./routes/categoryDemand');
+var categoryOrCollectionMappingAccuracyRouter = require('./routes/catergoryOrCollectionMappingAccuracy');
+var conversionIntentFunnelRouter = require('./routes/conversionIntentFunnel');
+var crossSearchPatternRouter = require('./routes/crossSearchPatterns');
+var highExitSearchesRouter = require('./routes/highExitSearches');
+var keywordClusteringRouter = require('./routes/keywordClustering');
+var lowResultSearchesRouter = require('./routes/lowResultSearches');
+var newVsReturningCustomerSearchesRouter = require('./routes/newVsReturningCustomerSearches');
+var priceIntentSegmentRouter = require('./routes/priceIntentSegments');
+var ratingSensitivityRouter = require('./routes/ratingSensitivity');
+var searchByLocationOrRegionRouter = require('./routes/searchByLocationOrRegion');
+var searchFailRateRouter = require('./routes/searchFailRate');
+var seasonalityTrendsRouter = require('./routes/seasonalityTrends');
+var synonymMissesRouter = require('./routes/synonymMisses');
+var trendingKeywordsRouter = require('./routes/trendingKeywords');
+var searchAddToCartConversionRouter = require('./routes/searchAddToCartConversion');
+var zeroResultsSearchesRouter = require('./routes/zeroResultsSearches');
+
 var cors = require("cors");
 
 
@@ -26,7 +47,27 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/data', trendingKeywordsRouter);
+app.use('/data', attributeTrendsRouter);
+app.use('/data', brandSearchVolumeRouter);
+app.use('/data', categoryDemandRouter);
+app.use('/data', categoryOrCollectionMappingAccuracyRouter);
+app.use('/data', conversionIntentFunnelRouter);
+app.use('/data', crossSearchPatternRouter);
+app.use('/data', highExitSearchesRouter);
+app.use('/data', keywordClusteringRouter);
+app.use('/data', lowResultSearchesRouter);
+app.use('/data', newVsReturningCustomerSearchesRouter);
+app.use('/data', priceIntentSegmentRouter);
+app.use('/data', ratingSensitivityRouter);
+app.use('/data', searchByLocationOrRegionRouter);
+app.use('/data', searchFailRateRouter);
+app.use('/data', seasonalityTrendsRouter);
+app.use('/data', synonymMissesRouter);
 app.use('/data', topSearchVolumeRouter);
+app.use('/data', searchAddToCartConversionRouter);
+app.use('/data', zeroResultsSearchesRouter);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

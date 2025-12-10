@@ -1,10 +1,21 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const categoryOrCollectionMappingAccuracyController = (req, res) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {categoryOrCollectionMappingAccuracyController};
+
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var categoryOrCollectionMappingAccuracyService = require('../service/catergoryOrCollectionMappingAccuracyService');
 
-/* GET users listing. */
 const categoryOrCollectionMappingAccuracyController = (req, res) => {
-    userservice.getUsers();
+    categoryOrCollectionMappingAccuracyService.categoryOrCollectionMappingAccuracyService(req, res);
 }
 
-module.exports = {categoryOrCollectionMappingAccuracyController};
+module.exports = { categoryOrCollectionMappingAccuracyController };

@@ -1,10 +1,21 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const conversionIntentFunnelController = (req, res) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {conversionIntentFunnelController};
+
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var conversionIntentFunnelService = require('../service/conversionIntentFunnelService');
 
-/* GET users listing. */
 const conversionIntentFunnelController = (req, res) => {
-    userservice.getUsers();
+    conversionIntentFunnelService.conversionIntentFunnelService(req, res);
 }
 
-module.exports = {conversionIntentFunnelController};
+module.exports = { conversionIntentFunnelController };

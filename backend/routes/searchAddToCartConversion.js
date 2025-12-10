@@ -1,9 +1,25 @@
+// var express = require('express');
+// var router = express.Router();
+
+// /* GET home page. */
+// router.get('/searchAddToCartConversion', function(req, res, next) {
+//   res.render('index', { title: 'Express' });
+// });
+
+// module.exports = router;
+
+
+
 var express = require('express');
 var router = express.Router();
+var searchAddToCartConversionController = require('../controller/searchAddToCartConversionController');
+var cors = require('cors');
 
-/* GET home page. */
+router.use(cors());
+
+/* GET search add to cart conversion. */
 router.get('/searchAddToCartConversion', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  searchAddToCartConversionController.searchAddToCartConversionController(req, res, next);
 });
 
 module.exports = router;

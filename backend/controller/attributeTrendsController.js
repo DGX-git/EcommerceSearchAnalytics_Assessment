@@ -1,10 +1,22 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const attributeTrendsController = (req, res, next) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {attributeTrendsController};
+
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var attributeTrendsService = require('../service/attributeTrendsService');
 
-/* GET users listing. */
+/* GET attribute trends. */
 const attributeTrendsController = (req, res, next) => {
-    userservice.getUsers();
+    attributeTrendsService.attributeTrendsService(req, res);
 }
 
-module.exports = {attributeTrendsController};
+module.exports = { attributeTrendsController };

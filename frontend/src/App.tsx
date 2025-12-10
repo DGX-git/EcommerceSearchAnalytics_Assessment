@@ -217,7 +217,7 @@ const Home: React.FC = () => {
     { path: '/seasonalityTrends', label: 'Seasonality Trends', icon: '📅' },
     { path: '/synonymMisses', label: 'Synonym Misses', icon: '🔍' },
     { path: '/zeroResultsSearches', label: 'Zero Results Searches', icon: '0️⃣' },
-    { path: '/users', label: 'Users', icon: '👤' },
+    // { path: '/users', label: 'Users', icon: '👤' },
   ];
 
   return (
@@ -312,7 +312,7 @@ function App() {
             <Route path="/seasonalityTrends" element={<SeasonalityTrends />} />
             <Route path="/synonymMisses" element={<SynonymMisses />} />
             <Route path="/zeroResultsSearches" element={<ZeroResultsSearches />} />
-            <Route path="/users" element={<Users />} />
+            {/* <Route path="/users" element={<Users />} /> */}
           </Routes>
         </Box>
 

@@ -22,7 +22,7 @@ import {
   SeasonalityTrends,
   SynonymMisses,
   ZeroResultsSearches,
-  Users,
+  // Users,
 } from '../components';
 
 export const AppRouter: React.FC = () => {
@@ -50,7 +50,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/seasonalityTrends" element={<SeasonalityTrends />} />
         <Route path="/synonymMisses" element={<SynonymMisses />} />
         <Route path="/zeroResultsSearches" element={<ZeroResultsSearches />} />
-        <Route path="/users" element={<Users />} />
+        {/* <Route path="/users" element={<Users />} /> */}
       </Routes>
     </Router>
   );

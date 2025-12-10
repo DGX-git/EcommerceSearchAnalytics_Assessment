@@ -55,27 +55,112 @@
 // export default ZeroResultsSearches;
 
 
+// import React, { useEffect, useState } from 'react';
+// import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// import { Box, CircularProgress, Alert, Card, CardContent, Typography } from '@mui/material';
+// import { analyticsAPI } from '../routes/api';
+
+// interface ZeroResultSearchData {
+//   keyword: string;
+//   count: number;
+// }
+
+// export const ZeroResultsSearches: React.FC = () => {
+//   const [data, setData] = useState<ZeroResultSearchData[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         setLoading(true);
+//         const result: any = await analyticsAPI.getZeroResultsSearches();
+//         setData(result);
+//       } catch (err) {
+//         setError(err instanceof Error ? err.message : 'Failed to fetch data');
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchData();
+//   }, []);
+
+//   return (
+//     <Card sx={{ m: 2 }}>
+//       <CardContent>
+//         <Typography variant="h5" sx={{ mb: 2 }}>Zero Results Searches</Typography>
+//         {loading && <CircularProgress />}
+//         {error && <Alert severity="error">{error}</Alert>}
+//         {!loading && !error && (
+//           <Box sx={{ width: '100%', height: 400 }}>
+//             <ResponsiveContainer width="100%" height="100%">
+//               <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 100 }}>
+//                 <CartesianGrid strokeDasharray="3 3" />
+//                 <XAxis dataKey="keyword" angle={-45} textAnchor="end" height={100} />
+//                 <YAxis />
+//                 <Tooltip />
+//                 <Legend />
+//                 <Bar dataKey="count" fill="#ff7c7c" name="Zero Result Count" />
+//               </BarChart>
+//             </ResponsiveContainer>
+//           </Box>
+//         )}
+//       </CardContent>
+//     </Card>
+//   );
+// };
+
+// export default ZeroResultsSearches;
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Box, CircularProgress, Alert, Card, CardContent, Typography } from '@mui/material';
+import { Box, CircularProgress, Alert, Card, CardContent, Typography, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { analyticsAPI } from '../routes/api';
 
 interface ZeroResultSearchData {
   keyword: string;
   count: number;
+  [key: string]: string | number;
 }
 
 export const ZeroResultsSearches: React.FC = () => {
   const [data, setData] = useState<ZeroResultSearchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartType, setChartType] = useState<'bar' | 'table'>('bar');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const result: any = await analyticsAPI.getZeroResultsSearches();
-        setData(result);
+        
+        // Handle both array and nested array responses
+        let processedData = Array.isArray(result) ? result : [];
+        
+        // If result is an array with metadata object, extract the data array
+        if (Array.isArray(result) && result.length > 0 && result[0] && Array.isArray(result[0])) {
+          processedData = result[0];
+        } else if (Array.isArray(result) && result.length > 1 && result[1] && result[1].rows) {
+          processedData = result[1].rows;
+        }
+        
+        // Filter and process data
+        const filteredData = processedData
+          .filter((item: any) => item.keyword && item.keyword.trim() !== '')
+          .map((item: any) => ({
+            keyword: item.keyword,
+            count: parseInt(item.count, 10)
+          }))
+          .sort((a: ZeroResultSearchData, b: ZeroResultSearchData) => b.count - a.count)
+          .slice(0, 20);
+        
+        setData(filteredData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
@@ -85,25 +170,79 @@ export const ZeroResultsSearches: React.FC = () => {
     fetchData();
   }, []);
 
+  const handleChartTypeChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newChartType: 'bar' | 'table',
+  ) => {
+    if (newChartType !== null) {
+      setChartType(newChartType);
+    }
+  };
+
   return (
     <Card sx={{ m: 2 }}>
       <CardContent>
-        <Typography variant="h5" sx={{ mb: 2 }}>Zero Results Searches</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5">Zero-Result Searches</Typography>
+          <ToggleButtonGroup
+            value={chartType}
+            exclusive
+            onChange={handleChartTypeChange}
+            aria-label="chart type"
+          >
+            <ToggleButton value="bar" aria-label="bar chart">
+              Bar Chart
+            </ToggleButton>
+            <ToggleButton value="table" aria-label="table">
+              Table
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+        
         {loading && <CircularProgress />}
         {error && <Alert severity="error">{error}</Alert>}
-        {!loading && !error && (
-          <Box sx={{ width: '100%', height: 400 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 100 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="keyword" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#ff7c7c" name="Zero Result Count" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
+        {!loading && !error && data.length > 0 && (
+          <>
+            {chartType === 'bar' && (
+              <Box sx={{ width: '100%', height: 400 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 100 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="keyword" angle={-45} textAnchor="end" height={100} />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#ff7c7c" name="Zero Result Count" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+            {/* {chartType === 'table' && (
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Rank</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Keyword</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Zero-Result Count</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.map((item, index) => (
+                      <TableRow key={index} hover>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item.keyword}</TableCell>
+                        <TableCell align="right">{item.count}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )} */}
+          </>
+        )}
+        {!loading && !error && data.length === 0 && (
+          <Alert severity="success">No zero-result searches found. Great catalog coverage!</Alert>
         )}
       </CardContent>
     </Card>

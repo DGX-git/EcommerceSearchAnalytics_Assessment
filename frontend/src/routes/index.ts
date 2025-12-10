@@ -1,7 +1,9 @@
 // API Routes Configuration
 // Maps frontend routes to backend API endpoints
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/data';
+// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/data';
+
+const API_BASE_URL = process.env.REACT_APP_PROD_URL || 'https://ecommercesearchanalytics-assessment.onrender.com/data';
 
 export const routes = {
   // Analytics Routes
@@ -27,7 +29,7 @@ export const routes = {
   zeroResultsSearches: `${API_BASE_URL}/zeroResultsSearches`,
   
   // User Routes
-  users: `${API_BASE_URL}/users`,
+  // users: `${API_BASE_URL}/users`,
 };
 
 export default routes;

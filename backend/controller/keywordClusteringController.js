@@ -1,10 +1,22 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const usercontroller = (req, res) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {usercontroller};
+
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var keywordClusteringService = require('../service/keywordClusteringService');
 
-/* GET users listing. */
-const usercontroller = (req, res) => {
-    userservice.getUsers();
+/* GET keyword clustering. */
+const keywordClusteringController = (req, res) => {
+    keywordClusteringService.keywordClusteringService(req, res);
 }
 
-module.exports = {usercontroller};
+module.exports = { keywordClusteringController };

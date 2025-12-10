@@ -1,10 +1,21 @@
+// var express = require('express');
+// var router = express.Router();
+// var userservice = require('../service/userservice');
+
+// /* GET users listing. */
+// const usercontroller = (req, res) => {
+//     userservice.getUsers();
+// }
+
+// module.exports = {usercontroller};
+
 var express = require('express');
 var router = express.Router();
-var userservice = require('../service/userservice');
+var searchFailRateService = require('../service/searchFailRateService');
 
-/* GET users listing. */
-const usercontroller = (req, res) => {
-    userservice.getUsers();
+/* GET search fail rate. */
+const searchFailRateController = (req, res) => {
+    searchFailRateService.searchFailRateService(req, res);
 }
 
-module.exports = {usercontroller};
+module.exports = { searchFailRateController };
