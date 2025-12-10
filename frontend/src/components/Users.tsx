@@ -1,4 +1,5 @@
 import React from 'react';
+import apiClient from '../apiClient';
 
 interface User {
   id: number;
@@ -15,12 +16,8 @@ export const Users: React.FC = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/users');
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        const data = await response.json();
-        setUsers(data);
+        // const { data } = await apiClient.get<User[]>(routes.users);
+        // setUsers(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch users');
       } finally {

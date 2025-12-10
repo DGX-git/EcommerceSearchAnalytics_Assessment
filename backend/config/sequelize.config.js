@@ -1,15 +1,28 @@
-const database_config = require('./db.config');
-const { Sequelize, DataTypes, Model } = require('sequelize');
+const { Sequelize } = require("sequelize");
+require('dotenv').config();
 
-const sequelize = new Sequelize(
-    database_config.DATABASE,
-    database_config.USER,
-    database_config.PASSWORD, {
-    host: database_config.HOST,
-    dialect: database_config.DIALECT,
-    port: database_config.PORT,
-    logging: console.log,
+// Validate required environment variables
+const requiredEnvVars = ['DB_USER', 'DB_HOST', 'DB_NAME', 'DB_PASSWORD', 'DB_DIALECT', 'DB_PORT'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
-);
+
+const config = {
+  USER: process.env.DB_USER,
+  HOST: process.env.DB_HOST,
+  DATABASE: process.env.DB_NAME,
+  PASSWORD: process.env.DB_PASSWORD,
+  DIALECT: process.env.DB_DIALECT,
+  PORT: process.env.DB_PORT,
+};
+
+const sequelize = new Sequelize(config.DATABASE, config.USER, config.PASSWORD, {
+  host: config.HOST,
+  dialect: config.DIALECT,
+  port: config.PORT,
+  logging: console.log,
+});
 
 module.exports = sequelize;

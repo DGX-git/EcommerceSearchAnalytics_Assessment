@@ -1,16 +1,3 @@
-// var express = require('express');
-// var router = express.Router();
-// var userservice = require('../service/userservice');
-
-// /* GET users listing. */
-// const attributeTrendsService = (req, res) => {
-//     userservice.getUsers();
-// }
-
-// module.exports = {attributeTrendsService};
-
-
-
 var express = require('express');
 var router = express.Router();
 var sequelize = require('../config/sequelize.config');

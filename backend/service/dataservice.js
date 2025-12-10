@@ -1,9 +1,6 @@
 const sequelize = require('../config/sequelize.config');
 const data = require('../model/data.model');
 
-
-
-
 const getData = async(request, response) => {
     sequelize.sync()
         .then(async () => {
