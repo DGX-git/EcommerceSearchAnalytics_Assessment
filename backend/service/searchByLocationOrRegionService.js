@@ -15,7 +15,7 @@ const searchByLocationOrRegionService = async(request, response) => {
             include: [
                 {
                     model: models.IpAddress,
-                    as: 'ipAddresses',
+                    as: 'ip_addresses',
                     attributes: ['ip_address'],
                     required: true
                 }
@@ -31,8 +31,8 @@ const searchByLocationOrRegionService = async(request, response) => {
             searchesWithIp.forEach(search => {
                 // Use IP address as region identifier (simplified approach)
                 // In production, IP addresses would be mapped to geographical regions via GeoIP API
-                const region = search.ipAddresses && search.ipAddresses.length > 0
-                    ? `Region-${search.ipAddresses[0].ip_address.split('.')[0]}`
+                const region = search.ip_addresses && search.ip_addresses.length > 0
+                    ? `Region-${search.ip_addresses[0].ip_address.split('.')[0]}`
                     : 'Unknown Region';
 
                 if (!regionStats[region]) {

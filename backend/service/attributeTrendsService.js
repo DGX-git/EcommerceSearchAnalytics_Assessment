@@ -1,6 +1,8 @@
 const { Op } = require('sequelize');
 const models = require('../models');
 
+const sequelize = models.sequelize;
+
 const attributeTrendsService = async(request, response) => {
     try {
         // Define the special attributes we want to track and their search patterns
@@ -21,8 +23,14 @@ const attributeTrendsService = async(request, response) => {
         for (const [attribute, pattern] of Object.entries(attributePatterns)) {
             const count = await models.Search.count({
                 where: {
-                    attributes: { [Op.iLike]: pattern },
-                    [Op.not]: { attributes: null }
+                    [Op.and]: [
+                        // attributes is JSONB; cast to text so we can apply ILIKE search patterns
+                        sequelize.where(
+                            sequelize.cast(sequelize.col('attributes'), 'text'),
+                            { [Op.iLike]: pattern }
+                        ),
+                        { attributes: { [Op.ne]: null } }
+                    ]
                 }
             });
             

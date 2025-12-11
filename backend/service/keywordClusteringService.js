@@ -1,5 +1,7 @@
 const models = require('../models');
-const { Op, sequelize } = require('sequelize');
+const { Op } = require('sequelize');
+
+const sequelize = models.sequelize;
 
 /**
  * Service to cluster keywords into semantic categories
