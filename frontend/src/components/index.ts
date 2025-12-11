@@ -23,7 +23,7 @@
 
 
 export { TopSearchVolume } from './TopSearchVolume';
-export { TrendingKeywords } from './TrendingKeywords';
+export { default as TrendingKeywords } from './TrendingKeywords';
 export { default as AttributeTrends } from './AttributeTrends';
 export { BrandSearchVolume } from './BrandSearchVolume';
 export { default as CategoryDemand } from './CategoryDemand';
@@ -34,12 +34,12 @@ export { default as HighExitSearches } from './HighExitSearches';
 export { KeywordClustering } from './KeywordClustering';
 export { default as LowResultSearches } from './LowResultSearches';
 export { default as NewVsReturningCustomerSearches } from './NewVsReturningCustomerSearches';
-export { PriceIntentSegments } from './PriceIntentSegments';
-export { RatingSensitivity } from './RatingSensitivity';
-export { SearchAddToCartConversion } from './SearchAddToCartConversion';
-export { SearchByLocationOrRegion } from './SearchByLocationOrRegion';
-export { SearchFailRate } from './SearchFailRate';
-export { SeasonalityTrends } from './SeasonalityTrends';
-export { SynonymMisses } from './SynonymMisses';
-export { ZeroResultsSearches } from './ZeroResultsSearches';
+export { default as PriceIntentSegments } from './PriceIntentSegments';
+export { default as RatingSensitivity } from './RatingSensitivity';
+export { default as SearchAddToCartConversion } from './SearchAddToCartConversion';
+export { default as SearchByLocationOrRegion } from './SearchByLocationOrRegion';
+export { default as SearchFailRate } from './SearchFailRate';
+export { default as SeasonalityTrends } from './SeasonalityTrends';
+export { default as SynonymMisses } from './SynonymMisses';
+export { default as ZeroResultsSearches } from './ZeroResultsSearches';
 // export { Users } from './Users';

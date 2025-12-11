@@ -5,7 +5,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 
 // Import all components
 import { TopSearchVolume } from './components/TopSearchVolume';
-import { TrendingKeywords } from './components/TrendingKeywords';
+import { default as TrendingKeywords } from './components/TrendingKeywords';
 import { default as AttributeTrends } from './components/AttributeTrends';
 import { BrandSearchVolume } from './components/BrandSearchVolume';
 import { default as CategoryDemand } from './components/CategoryDemand';
@@ -16,14 +16,14 @@ import { default as HighExitSearches } from './components/HighExitSearches';
 import { default as KeywordClustering } from './components/KeywordClustering';
 import { default as LowResultSearches } from './components/LowResultSearches';
 import { default as NewVsReturningCustomerSearches } from './components/NewVsReturningCustomerSearches';
-import { PriceIntentSegments } from './components/PriceIntentSegments';
-import { RatingSensitivity } from './components/RatingSensitivity';
-import { SearchAddToCartConversion } from './components/SearchAddToCartConversion';
-import { SearchByLocationOrRegion } from './components/SearchByLocationOrRegion';
-import { SearchFailRate } from './components/SearchFailRate';
-import { SeasonalityTrends } from './components/SeasonalityTrends';
-import { SynonymMisses } from './components/SynonymMisses';
-import { ZeroResultsSearches } from './components/ZeroResultsSearches';
+import { default as PriceIntentSegments } from './components/PriceIntentSegments';
+import { default as RatingSensitivity } from './components/RatingSensitivity';
+import { default as SearchAddToCartConversion } from './components/SearchAddToCartConversion';
+import { default as SearchByLocationOrRegion } from './components/SearchByLocationOrRegion';
+import { default as SearchFailRate } from './components/SearchFailRate';
+import { default as SeasonalityTrends } from './components/SeasonalityTrends';
+import { default as SynonymMisses } from './components/SynonymMisses';
+import { default as ZeroResultsSearches } from './components/ZeroResultsSearches';
 import { Users } from './components/Users';
 
 // Home Component

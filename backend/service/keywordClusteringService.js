@@ -113,32 +113,162 @@
 // Add Op to require at top if not already:
 // const { Op } = require('sequelize');
 
+// const keywordClusteringService = async (request, response) => {
+//   try {
+//     const { startDate, endDate } = request.query || {};
+//     const where = {
+//       search_keyword: {
+//         [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }]
+//       }
+//     };
+
+//     if (startDate) where.search_date = { ...(where.search_date || {}), [Op.gte]: startDate };
+//     if (endDate) where.search_date = { ...(where.search_date || {}), [Op.lte]: endDate };
+
+//     const keywords = await models.Search.findAll({
+//       attributes: [
+//         'search_keyword',
+//         [sequelize.fn('COUNT', sequelize.col('search_id')), 'search_count']
+//       ],
+//       where,
+//       group: ['search_keyword'],
+//       order: [[sequelize.literal('search_count'), 'DESC']],
+//       limit: 200,
+//       raw: true
+//     });
+
+//     // ...rest of existing clustering logic
+//   } catch (error) {
+//     // ...
+//   }
+// };
+
+
+
+const models = require('../models');
+const { Op, fn, col, literal } = require('sequelize');
+
+/**
+ * Service to cluster keywords into semantic categories
+ * Accepts optional query params:
+ *  - startDate (ISO) optional
+ *  - endDate   (ISO) optional
+ *
+ * Returns an array of cluster objects:
+ *  { cluster_name, keywords: [{ keyword, search_count }], total_searches }
+ */
 const keywordClusteringService = async (request, response) => {
   try {
     const { startDate, endDate } = request.query || {};
+
+    // Build where clause (non-empty keywords + optional date range)
     const where = {
-      search_keyword: {
-        [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }]
-      }
+      search_keyword: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }] }
     };
 
-    if (startDate) where.search_date = { ...(where.search_date || {}), [Op.gte]: startDate };
-    if (endDate) where.search_date = { ...(where.search_date || {}), [Op.lte]: endDate };
+    if (startDate && !isNaN(Date.parse(startDate))) {
+      where.search_date = { ...(where.search_date || {}), [Op.gte]: new Date(startDate) };
+    }
+    if (endDate && !isNaN(Date.parse(endDate))) {
+      // make end inclusive to end of day
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      where.search_date = { ...(where.search_date || {}), [Op.lte]: e };
+    }
 
+    // Fetch keywords with counts (grouped)
     const keywords = await models.Search.findAll({
       attributes: [
-        'search_keyword',
-        [sequelize.fn('COUNT', sequelize.col('search_id')), 'search_count']
+        ['search_keyword', 'search_keyword'],
+        [fn('COUNT', col('search_id')), 'search_count']
       ],
       where,
       group: ['search_keyword'],
-      order: [[sequelize.literal('search_count'), 'DESC']],
+      order: [[literal('search_count'), 'DESC']],
       limit: 200,
-      raw: true
+      raw: true,
+      subQuery: false
     });
 
-    // ...rest of existing clustering logic
+    // Cluster definitions (beauty/skincare example)
+    const clusterDefinitions = {
+      'Face Moisturizers': ['moisturizer', 'cream', 'face cream', 'hydrating', 'hydration', 'lotion', 'face lotion'],
+      'Sunscreen & SPF': ['sunscreen', 'spf', 'sun protection', 'sunblock', 'uv', 'uv protection'],
+      'Face Cleansers': ['cleanser', 'face wash', 'facial cleanser', 'soap', 'face soap'],
+      'Serums & Treatments': ['serum', 'treatment', 'essence', 'toner', 'facial serum', 'skin serum'],
+      'Lip Care': ['lip balm', 'lip gloss', 'lip care', 'lip stick', 'lipstick', 'lip tint'],
+      'Eye Care': ['eye cream', 'eye serum', 'eye treatment', 'under eye', 'eye care', 'eye patch'],
+      'Masks & Exfoliants': ['mask', 'exfoliating', 'exfoliant', 'face mask', 'clay mask', 'sheet mask'],
+      'Acne & Spot Treatment': ['acne', 'acne-safe', 'spot treatment', 'blemish', 'pimple', 'anti-acne'],
+      'Natural & Organic': ['vegan', 'cruelty-free', 'organic', 'natural', 'plant-based', 'eco-friendly'],
+      'Anti-Aging': ['anti-aging', 'anti aging', 'wrinkle', 'age', 'retinol', 'collagen', 'firming']
+    };
+
+    // Assign keywords to clusters
+    const clusteredKeywords = {};
+
+    keywords.forEach(item => {
+      const rawKeyword = item.search_keyword ?? '';
+      const keywordLower = String(rawKeyword).toLowerCase();
+      const searchCount = Number(item.search_count ?? 0) || 0;
+      let assigned = false;
+
+      for (const [cluster, keywordsList] of Object.entries(clusterDefinitions)) {
+        const matches = keywordsList.some(kw =>
+          keywordLower.includes(kw.toLowerCase()) || kw.toLowerCase().includes(keywordLower)
+        );
+
+        if (matches) {
+          if (!clusteredKeywords[cluster]) {
+            clusteredKeywords[cluster] = {
+              cluster_name: cluster,
+              keywords: [],
+              total_searches: 0
+            };
+          }
+
+          clusteredKeywords[cluster].keywords.push({
+            keyword: rawKeyword,
+            search_count: searchCount
+          });
+          clusteredKeywords[cluster].total_searches += searchCount;
+          assigned = true;
+          break;
+        }
+      }
+
+      if (!assigned) {
+        if (!clusteredKeywords['Other']) {
+          clusteredKeywords['Other'] = {
+            cluster_name: 'Other',
+            keywords: [],
+            total_searches: 0
+          };
+        }
+        clusteredKeywords['Other'].keywords.push({
+          keyword: rawKeyword,
+          search_count: searchCount
+        });
+        clusteredKeywords['Other'].total_searches += searchCount;
+      }
+    });
+
+    // Convert to array, sort keywords inside cluster and sort clusters by total_searches desc
+    const result = Object.values(clusteredKeywords)
+      .map(cluster => {
+        cluster.keywords = cluster.keywords
+          .sort((a, b) => b.search_count - a.search_count)
+          .slice(0, 100); // limit per cluster for payload control
+        return cluster;
+      })
+      .filter(cluster => cluster.keywords.length > 0)
+      .sort((a, b) => b.total_searches - a.total_searches);
+
+    return response.status(200).json(result);
   } catch (error) {
-    // ...
+    console.error('Failed to fetch keyword clustering:', error);
+    return response.status(500).json({ error: 'Failed to fetch keyword cluster data' });
   }
 };
+
+module.exports = { keywordClusteringService };
