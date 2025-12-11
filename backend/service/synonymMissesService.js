@@ -1,11 +1,13 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const models = require('../models');
+const { Op, sequelize } = require('sequelize');
 
+/**
+ * Service to find zero-result searches that have synonyms with successful results
+ * Identifies missed search opportunities due to lack of synonym handling
+ * Uses Sequelize ORM with application-layer synonym matching logic
+ */
 const synonymMissesService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
         // Define synonym mappings - keywords that should match but don't
         const synonymMappings = {
             'face lotion': ['moisturizer', 'cream', 'hydrating'],
@@ -19,50 +21,81 @@ const synonymMissesService = async(request, response) => {
             'face exfoliator': ['exfoliant', 'mask'],
             'hydrating serum': ['serum', 'essence', 'treatment']
         };
-        
-        // Find searches with zero results
-        const zeroResultSearches = await sequelize.query(`
-            SELECT 
-                search_keyword as keyword,
-                COUNT(DISTINCT search_id) as miss_count
-            FROM searches
-            WHERE total_results = 0
-            AND search_keyword IS NOT NULL
-            AND search_keyword != ''
-            GROUP BY search_keyword
-            ORDER BY miss_count DESC
-            LIMIT 50
-        `, {
-            type: sequelize.QueryTypes.SELECT
+
+        // Fetch zero-result searches
+        const zeroResultSearches = await models.Search.findAll({
+            attributes: ['search_id', 'search_keyword'],
+            where: {
+                total_results: 0,
+                search_keyword: {
+                    [Op.and]: [
+                        { [Op.ne]: null },
+                        { [Op.ne]: '' }
+                    ]
+                }
+            },
+            raw: true
         });
-        
-        // Check if similar products exist with synonym keywords
+
+        // Group zero-result searches by keyword
+        const keywordGroups = {};
+        zeroResultSearches.forEach(search => {
+            const keyword = search.search_keyword;
+            if (!keywordGroups[keyword]) {
+                keywordGroups[keyword] = 0;
+            }
+            keywordGroups[keyword]++;
+        });
+
+        // Fetch all searches with results for synonym matching
+        const successfulSearches = await models.Search.findAll({
+            attributes: ['search_keyword'],
+            where: {
+                total_results: {
+                    [Op.gt]: 0
+                },
+                search_keyword: {
+                    [Op.and]: [
+                        { [Op.ne]: null },
+                        { [Op.ne]: '' }
+                    ]
+                }
+            },
+            raw: true
+        });
+
+        const successfulKeywords = new Set(
+            successfulSearches.map(s => s.search_keyword.toLowerCase())
+        );
+
+        // Find synonym misses
         const synonymMisses = [];
-        
-        for (const search of zeroResultSearches) {
-            const keyword = search.keyword.toLowerCase();
-            
+
+        for (const [missedKeyword, missCount] of Object.entries(keywordGroups)) {
+            const lowerMissed = missedKeyword.toLowerCase();
+
             // Check if this keyword has defined synonyms
             for (const [searchTerm, synonyms] of Object.entries(synonymMappings)) {
-                if (keyword.includes(searchTerm) || searchTerm.includes(keyword)) {
-                    // Query to find if synonyms exist in successful searches
+                if (lowerMissed.includes(searchTerm) || searchTerm.includes(lowerMissed)) {
+                    // Check each synonym
                     for (const synonym of synonyms) {
-                        const synonymSearch = await sequelize.query(`
-                            SELECT COUNT(DISTINCT search_id) as found_count
-                            FROM searches
-                            WHERE LOWER(search_keyword) LIKE '%' || :synonym || '%'
-                            AND total_results > 0
-                        `, {
-                            replacements: { synonym: synonym },
-                            type: sequelize.QueryTypes.SELECT
-                        });
+                        const lowerSynonym = synonym.toLowerCase();
                         
-                        if (synonymSearch[0].found_count > 0) {
+                        // Check if any successful search contains this synonym
+                        const hasSynonym = Array.from(successfulKeywords).some(
+                            keyword => keyword.includes(lowerSynonym) || lowerSynonym.includes(keyword)
+                        );
+
+                        if (hasSynonym) {
+                            const synonymFoundCount = Array.from(successfulKeywords).filter(
+                                keyword => keyword.includes(lowerSynonym) || lowerSynonym.includes(keyword)
+                            ).length;
+
                             synonymMisses.push({
-                                keyword: search.keyword,
+                                keyword: missedKeyword,
                                 missed_variant: synonym,
-                                miss_count: search.miss_count,
-                                synonym_found: synonymSearch[0].found_count
+                                miss_count: missCount,
+                                synonym_found: synonymFoundCount
                             });
                         }
                     }
@@ -70,15 +103,17 @@ const synonymMissesService = async(request, response) => {
                 }
             }
         }
-        
-        // Sort by miss count descending
-        synonymMisses.sort((a, b) => b.miss_count - a.miss_count);
-        
-        response.status(200).json(synonymMisses.slice(0, 20));
+
+        // Sort by miss count descending and limit to 20
+        const result = synonymMisses
+            .sort((a, b) => b.miss_count - a.miss_count)
+            .slice(0, 20);
+
+        response.status(200).json(result);
     } catch (error) {
-        console.log('Failed to fetch synonym misses', error);
-        response.status(500).json({ error: 'Failed to fetch data' });
+        console.error('Failed to fetch synonym misses:', error);
+        response.status(500).json({ error: 'Failed to fetch synonym miss data' });
     }
-}
+};
 
 module.exports = { synonymMissesService };

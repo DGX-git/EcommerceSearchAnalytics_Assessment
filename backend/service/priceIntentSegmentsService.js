@@ -1,44 +1,63 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const models = require('../models');
+const { Op, fn, col, sequelize } = require('sequelize');
 
+/**
+ * Service to segment searches by price intent ranges
+ * Categorizes: Budget (≤$50), Mid-range ($51-$200), Premium (>$200)
+ * Uses Sequelize ORM for database queries and application-layer transformations
+ */
 const priceIntentSegmentService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
-        // Query to categorize searches by price intent
-        // Budget: max_price <= 50
-        // Mid-range: max_price 51-200
-        // Premium: max_price > 200
-        const priceIntentSegments = await sequelize.query(`
-            SELECT 
-                CASE 
-                    WHEN max_price <= 50 THEN 'Budget (≤$50)'
-                    WHEN max_price > 50 AND max_price <= 200 THEN 'Mid-range ($51-$200)'
-                    ELSE 'Premium (>$200)'
-                END as price_segment,
-                COUNT(DISTINCT search_id) as segment_count,
-                ROUND(AVG(max_price), 2) as avg_max_price,
-                MIN(max_price) as min_price,
-                MAX(max_price) as max_price
-            FROM searches
-            WHERE max_price > 0
-            GROUP BY price_segment
-            ORDER BY 
-                CASE 
-                    WHEN price_segment = 'Budget (≤$50)' THEN 1
-                    WHEN price_segment = 'Mid-range ($51-$200)' THEN 2
-                    ELSE 3
-                END
-        `, {
-            type: sequelize.QueryTypes.SELECT
+        // Fetch all searches with max_price > 0
+        const searches = await models.Search.findAll({
+            attributes: ['search_id', 'max_price'],
+            where: {
+                max_price: {
+                    [Op.gt]: 0
+                }
+            },
+            raw: true
         });
-        
-        response.status(200).json(priceIntentSegments);
+
+        // Transform and segment data in application layer
+        const segments = {
+            'Budget (≤$50)': { count: 0, prices: [] },
+            'Mid-range ($51-$200)': { count: 0, prices: [] },
+            'Premium (>$200)': { count: 0, prices: [] }
+        };
+
+        searches.forEach(search => {
+            const price = parseFloat(search.max_price);
+            if (price <= 50) {
+                segments['Budget (≤$50)'].count++;
+                segments['Budget (≤$50)'].prices.push(price);
+            } else if (price > 50 && price <= 200) {
+                segments['Mid-range ($51-$200)'].count++;
+                segments['Mid-range ($51-$200)'].prices.push(price);
+            } else {
+                segments['Premium (>$200)'].count++;
+                segments['Premium (>$200)'].prices.push(price);
+            }
+        });
+
+        // Calculate statistics for each segment
+        const result = Object.entries(segments)
+            .map(([segment, data]) => ({
+                price_segment: segment,
+                segment_count: data.count,
+                avg_max_price: data.prices.length > 0 
+                    ? parseFloat((data.prices.reduce((a, b) => a + b, 0) / data.prices.length).toFixed(2))
+                    : 0,
+                min_price: data.prices.length > 0 ? Math.min(...data.prices) : 0,
+                max_price: data.prices.length > 0 ? Math.max(...data.prices) : 0
+            }))
+            .filter(item => item.segment_count > 0);
+
+        response.status(200).json(result);
     } catch (error) {
-        console.log('Failed to fetch price intent segments', error);
-        response.status(500).json({ error: 'Failed to fetch data' });
+        console.error('Failed to fetch price intent segments:', error);
+        response.status(500).json({ error: 'Failed to fetch price intent segment data' });
     }
-}
+};
 
 module.exports = { priceIntentSegmentService };

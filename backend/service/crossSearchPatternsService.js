@@ -1,54 +1,98 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const models = require('../models');
+const { Op, sequelize } = require('sequelize');
 
+/**
+ * Service to identify sequential search patterns (keyword sequences)
+ * Finds patterns like "serum" followed by "vitamin C" within a customer's search history
+ * Uses Sequelize ORM with application-layer sequence matching
+ */
 const crossSearchPatternsService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
-        // Query to find search sequences: what keyword follows another keyword
-        // This identifies patterns like "serum" -> "vitamin C"
-        const searchPatterns = await sequelize.query(`
-            WITH customer_searches AS (
-                SELECT 
-                    s1.customer_id,
-                    s1.search_keyword as first_keyword,
-                    s2.search_keyword as next_keyword,
-                    s1.search_date as first_date,
-                    s2.search_date as next_date,
-                    ROW_NUMBER() OVER (PARTITION BY s1.customer_id ORDER BY s2.search_date) as search_sequence
-                FROM searches s1
-                INNER JOIN searches s2 
-                    ON s1.customer_id = s2.customer_id
-                    AND s2.search_date > s1.search_date
-                    AND DATEDIFF(day, s1.search_date, s2.search_date) <= 7
-                WHERE s1.search_keyword IS NOT NULL 
-                AND s1.search_keyword != ''
-                AND s2.search_keyword IS NOT NULL 
-                AND s2.search_keyword != ''
-                AND s1.search_keyword != s2.search_keyword
-            )
-            SELECT 
-                CONCAT(first_keyword, ' → ', next_keyword) as pattern,
-                COUNT(*) as frequency,
-                COUNT(DISTINCT customer_id) as user_count,
-                ROUND(COUNT(*) * 100.0 / 
-                    (SELECT COUNT(*) FROM searches WHERE search_keyword IS NOT NULL AND search_keyword != ''), 2) as pattern_percentage
-            FROM customer_searches
-            WHERE search_sequence <= 2
-            GROUP BY first_keyword, next_keyword
-            HAVING COUNT(*) >= 2
-            ORDER BY frequency DESC
-            LIMIT 30
-        `, {
-            type: sequelize.QueryTypes.SELECT
+        // Fetch all searches ordered by customer and date
+        const searches = await models.Search.findAll({
+            attributes: ['search_id', 'customer_id', 'search_keyword', 'search_date'],
+            where: {
+                search_keyword: {
+                    [Op.and]: [
+                        { [Op.ne]: null },
+                        { [Op.ne]: '' }
+                    ]
+                },
+                customer_id: {
+                    [Op.ne]: null
+                }
+            },
+            order: [['customer_id', 'ASC'], ['search_date', 'ASC']],
+            raw: true
         });
-        
-        response.status(200).json(searchPatterns);
+
+        // Group searches by customer
+        const customerSearches = {};
+        searches.forEach(search => {
+            const customerId = search.customer_id;
+            if (!customerSearches[customerId]) {
+                customerSearches[customerId] = [];
+            }
+            customerSearches[customerId].push({
+                keyword: search.search_keyword,
+                date: new Date(search.search_date)
+            });
+        });
+
+        // Extract sequential patterns within 7-day windows
+        const patterns = {};
+
+        Object.entries(customerSearches).forEach(([customerId, customerKeywords]) => {
+            // Generate all pairs of consecutive and near-consecutive searches
+            for (let i = 0; i < customerKeywords.length - 1; i++) {
+                const current = customerKeywords[i];
+                
+                // Look ahead up to 2 searches within 7 days
+                for (let j = i + 1; j < Math.min(i + 3, customerKeywords.length); j++) {
+                    const next = customerKeywords[j];
+                    
+                    // Check if within 7-day window
+                    const daysDiff = (next.date - current.date) / (1000 * 60 * 60 * 24);
+                    if (daysDiff <= 7 && current.keyword !== next.keyword) {
+                        const patternKey = `${current.keyword} → ${next.keyword}`;
+                        
+                        if (!patterns[patternKey]) {
+                            patterns[patternKey] = {
+                                pattern: patternKey,
+                                frequency: 0,
+                                user_ids: new Set()
+                            };
+                        }
+                        
+                        patterns[patternKey].frequency++;
+                        patterns[patternKey].user_ids.add(customerId);
+                    }
+                }
+            }
+        });
+
+        // Get total search count for percentage calculation
+        const totalSearches = searches.filter(s => 
+            s.search_keyword && s.search_keyword.trim() !== ''
+        ).length;
+
+        // Filter patterns with frequency >= 2 and calculate metrics
+        const result = Object.values(patterns)
+            .filter(p => p.frequency >= 2)
+            .map(p => ({
+                pattern: p.pattern,
+                frequency: p.frequency,
+                user_count: p.user_ids.size,
+                pattern_percentage: parseFloat(((p.frequency * 100.0 / totalSearches).toFixed(2)))
+            }))
+            .sort((a, b) => b.frequency - a.frequency)
+            .slice(0, 30);
+
+        response.status(200).json(result);
     } catch (error) {
-        console.log('Failed to fetch cross search patterns', error);
-        response.status(500).json({ error: 'Failed to fetch data' });
+        console.error('Failed to fetch cross search patterns:', error);
+        response.status(500).json({ error: 'Failed to fetch search pattern data' });
     }
-}
+};
 
 module.exports = { crossSearchPatternsService };

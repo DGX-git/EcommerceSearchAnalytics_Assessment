@@ -1,12 +1,14 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const models = require('../models');
+const { Op, sequelize } = require('sequelize');
 
+/**
+ * Service to validate keyword-to-category/collection mapping accuracy
+ * Compares actual mappings against expected semantic mappings
+ * Uses Sequelize ORM with include joins for category associations
+ */
 const categoryOrCollectionMappingAccuracyService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
-        // Define keyword-to-category semantic mappings (correct mappings)
+        // Define correct semantic keyword-to-category mappings
         const correctMappings = {
             'skincare': ['moisturizer', 'serum', 'cleanser', 'toner', 'face cream', 'face wash'],
             'haircare': ['shampoo', 'conditioner', 'hair mask', 'hair serum', 'hairspray'],
@@ -17,85 +19,95 @@ const categoryOrCollectionMappingAccuracyService = async(request, response) => {
             'bath & body': ['body lotion', 'body cream', 'shower gel', 'body wash'],
             'fragrance': ['perfume', 'cologne', 'scent', 'fragrance', 'body spray']
         };
-        
-        // Query all searches with their mapped categories
-        const searchCategoryMappings = await sequelize.query(`
-            SELECT 
-                s.search_keyword,
-                c.category_name,
-                COUNT(DISTINCT s.search_id) as search_count
-            FROM searches s
-            LEFT JOIN search_categories sc ON s.search_id = sc.search_id
-            LEFT JOIN categories c ON sc.category_id = c.category_id
-            WHERE s.search_keyword IS NOT NULL
-            AND s.search_keyword != ''
-            GROUP BY s.search_keyword, c.category_name
-            ORDER BY search_count DESC
-            LIMIT 100
-        `, {
-            type: sequelize.QueryTypes.SELECT
+
+        // Fetch searches with their category mappings
+        const searchCategoryMappings = await models.Search.findAll({
+            attributes: ['search_id', 'search_keyword'],
+            include: [
+                {
+                    model: models.Category,
+                    as: 'categories',
+                    attributes: ['category_id', 'category_name'],
+                    through: { attributes: [] },
+                    required: false
+                }
+            ],
+            limit: 100,
+            raw: false
         });
-        
+
         // Analyze mapping accuracy
         const mappingAccuracy = {};
-        
-        for (const mapping of searchCategoryMappings) {
-            const keyword = mapping.search_keyword.toLowerCase();
-            const mappedCategory = mapping.category_name || 'Unmapped';
-            const searchCount = mapping.search_count;
+
+        searchCategoryMappings.forEach(search => {
+            const keyword = (search.search_keyword || '').toLowerCase();
             
-            let isCorrect = false;
-            let expectedCategory = 'Unknown';
-            
-            // Check if keyword correctly maps to its category
-            for (const [category, keywords] of Object.entries(correctMappings)) {
-                const keywordsList = keywords;
-                if (keywordsList.some(kw => keyword.includes(kw) || kw.includes(keyword))) {
-                    expectedCategory = category;
-                    isCorrect = mappedCategory.toLowerCase().includes(category.toLowerCase());
-                    break;
+            // Get mapped categories
+            const mappedCategories = search.categories && search.categories.length > 0
+                ? search.categories.map(c => c.category_name)
+                : ['Unmapped'];
+
+            mappedCategories.forEach(mappedCategory => {
+                let expectedCategory = 'Unknown';
+                let isCorrect = false;
+
+                // Check if keyword correctly maps to expected category
+                for (const [category, keywords] of Object.entries(correctMappings)) {
+                    const matches = keywords.some(kw => 
+                        keyword.includes(kw.toLowerCase()) || kw.toLowerCase().includes(keyword)
+                    );
+                    
+                    if (matches) {
+                        expectedCategory = category;
+                        isCorrect = mappedCategory.toLowerCase().includes(category.toLowerCase());
+                        break;
+                    }
                 }
-            }
-            
-            const categoryKey = `${mappedCategory}`;
-            
-            if (!mappingAccuracy[categoryKey]) {
-                mappingAccuracy[categoryKey] = {
-                    category: mappedCategory,
-                    total_mappings: 0,
-                    correct_mappings: 0,
-                    total_searches: 0,
-                    correct_searches: 0,
-                    expected_category: expectedCategory,
-                    sample_keywords: []
-                };
-            }
-            
-            mappingAccuracy[categoryKey].total_mappings++;
-            mappingAccuracy[categoryKey].total_searches += searchCount;
-            
-            if (isCorrect) {
-                mappingAccuracy[categoryKey].correct_mappings++;
-                mappingAccuracy[categoryKey].correct_searches += searchCount;
-            }
-            
-            if (mappingAccuracy[categoryKey].sample_keywords.length < 3) {
-                mappingAccuracy[categoryKey].sample_keywords.push({
-                    keyword: mapping.search_keyword,
-                    mapped_to: mappedCategory,
-                    expected: expectedCategory,
-                    correct: isCorrect,
-                    count: searchCount
-                });
-            }
-        }
-        
-        // Calculate accuracy percentages
-        const accuracyResults = Object.values(mappingAccuracy)
-            .map((item) => ({
+
+                const categoryKey = `${mappedCategory}`;
+
+                if (!mappingAccuracy[categoryKey]) {
+                    mappingAccuracy[categoryKey] = {
+                        category: mappedCategory,
+                        total_mappings: 0,
+                        correct_mappings: 0,
+                        total_searches: 0,
+                        correct_searches: 0,
+                        expected_category: expectedCategory,
+                        sample_keywords: []
+                    };
+                }
+
+                mappingAccuracy[categoryKey].total_mappings++;
+                mappingAccuracy[categoryKey].total_searches++;
+
+                if (isCorrect) {
+                    mappingAccuracy[categoryKey].correct_mappings++;
+                    mappingAccuracy[categoryKey].correct_searches++;
+                }
+
+                if (mappingAccuracy[categoryKey].sample_keywords.length < 3) {
+                    mappingAccuracy[categoryKey].sample_keywords.push({
+                        keyword: search.search_keyword,
+                        mapped_to: mappedCategory,
+                        expected: expectedCategory,
+                        correct: isCorrect,
+                        count: 1
+                    });
+                }
+            });
+        });
+
+        // Calculate accuracy percentages and prepare results
+        const result = Object.values(mappingAccuracy)
+            .map(item => ({
                 category: item.category,
-                mapping_accuracy: item.total_mappings > 0 ? Math.round((item.correct_mappings / item.total_mappings) * 100) : 0,
-                search_accuracy: item.total_searches > 0 ? Math.round((item.correct_searches / item.total_searches) * 100) : 0,
+                mapping_accuracy: item.total_mappings > 0 
+                    ? Math.round((item.correct_mappings / item.total_mappings) * 100)
+                    : 0,
+                search_accuracy: item.total_searches > 0
+                    ? Math.round((item.correct_searches / item.total_searches) * 100)
+                    : 0,
                 total_mappings: item.total_mappings,
                 correct_mappings: item.correct_mappings,
                 total_searches: item.total_searches,
@@ -103,12 +115,12 @@ const categoryOrCollectionMappingAccuracyService = async(request, response) => {
                 sample_keywords: item.sample_keywords
             }))
             .sort((a, b) => b.search_accuracy - a.search_accuracy);
-        
-        response.status(200).json(accuracyResults);
+
+        response.status(200).json(result);
     } catch (error) {
-        console.log('Failed to fetch category/collection mapping accuracy', error);
-        response.status(500).json({ error: 'Failed to fetch data' });
+        console.error('Failed to fetch category/collection mapping accuracy:', error);
+        response.status(500).json({ error: 'Failed to fetch mapping accuracy data' });
     }
-}
+};
 
 module.exports = { categoryOrCollectionMappingAccuracyService };

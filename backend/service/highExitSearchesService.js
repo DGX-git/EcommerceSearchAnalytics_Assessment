@@ -1,54 +1,75 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const models = require('../models');
+const { Op, sequelize } = require('sequelize');
 
+/**
+ * Service to identify high-exit searches (high bounce rate keywords)
+ * High-exit searches have zero results or very few results (<5)
+ * Uses Sequelize ORM with application-layer filtering and calculations
+ */
 const highExitSearchService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
-        // Query to identify high-exit searches
-        // High-exit searches are those where:
-        // 1. The search returns very few or zero results, OR
-        // 2. The same customer doesn't make another search within 1 hour (indicating dissatisfaction)
-        
-        const highExitSearches = await sequelize.query(`
-            SELECT 
-                s.search_keyword as keyword,
-                COUNT(DISTINCT s.search_id) as total_searches,
-                COUNT(DISTINCT CASE 
-                    WHEN s.total_results = 0 THEN 1 
-                    ELSE NULL 
-                END) as zero_result_searches,
-                COUNT(DISTINCT CASE 
-                    WHEN s.total_results > 0 AND s.total_results < 5 THEN 1 
-                    ELSE NULL 
-                END) as low_result_searches,
-                ROUND(
-                    (COUNT(DISTINCT CASE 
-                        WHEN s.total_results = 0 THEN 1 
-                        ELSE NULL 
-                    END) + COUNT(DISTINCT CASE 
-                        WHEN s.total_results > 0 AND s.total_results < 5 THEN 1 
-                        ELSE NULL 
-                    END)) * 100.0 / COUNT(DISTINCT s.search_id), 
-                    2
-                ) as exit_rate
-            FROM searches s
-            WHERE s.search_keyword IS NOT NULL
-            AND s.search_keyword != ''
-            GROUP BY s.search_keyword
-            HAVING COUNT(DISTINCT s.search_id) > 0
-            ORDER BY exit_rate DESC
-            LIMIT 20
-        `, {
-            type: sequelize.QueryTypes.SELECT
+        // Fetch all searches with keywords
+        const searches = await models.Search.findAll({
+            attributes: ['search_id', 'search_keyword', 'total_results'],
+            where: {
+                search_keyword: {
+                    [Op.and]: [
+                        { [Op.ne]: null },
+                        { [Op.ne]: '' }
+                    ]
+                }
+            },
+            raw: true
         });
-        
-        response.status(200).json(highExitSearches);
+
+        // Group searches by keyword and calculate exit rates
+        const keywordStats = {};
+
+        searches.forEach(search => {
+            const keyword = search.search_keyword;
+            const isExitSearch = search.total_results === 0 || 
+                               (search.total_results > 0 && search.total_results < 5);
+
+            if (!keywordStats[keyword]) {
+                keywordStats[keyword] = {
+                    total_searches: 0,
+                    zero_result_searches: 0,
+                    low_result_searches: 0,
+                    exit_searches: 0,
+                    search_ids: new Set()
+                };
+            }
+
+            keywordStats[keyword].total_searches++;
+            keywordStats[keyword].search_ids.add(search.search_id);
+
+            if (search.total_results === 0) {
+                keywordStats[keyword].zero_result_searches++;
+                keywordStats[keyword].exit_searches++;
+            } else if (search.total_results > 0 && search.total_results < 5) {
+                keywordStats[keyword].low_result_searches++;
+                keywordStats[keyword].exit_searches++;
+            }
+        });
+
+        // Calculate exit rates and filter results
+        const result = Object.entries(keywordStats)
+            .filter(([_, stats]) => stats.search_ids.size > 0)
+            .map(([keyword, stats]) => ({
+                keyword,
+                total_searches: stats.search_ids.size,
+                zero_result_searches: stats.zero_result_searches,
+                low_result_searches: stats.low_result_searches,
+                exit_rate: parseFloat(((stats.exit_searches * 100.0 / stats.search_ids.size).toFixed(2)))
+            }))
+            .sort((a, b) => b.exit_rate - a.exit_rate)
+            .slice(0, 20);
+
+        response.status(200).json(result);
     } catch (error) {
-        console.log('Failed to fetch high exit searches', error);
-        response.status(500).json({ error: 'Failed to fetch data' });
+        console.error('Failed to fetch high exit searches:', error);
+        response.status(500).json({ error: 'Failed to fetch high exit search data' });
     }
-}
+};
 
 module.exports = { highExitSearchService };

@@ -1,47 +1,103 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const models = require('../models');
+const { Op, fn, col, sequelize } = require('sequelize');
 
+/**
+ * Service to segment customers as new or returning
+ * Based on search frequency: New (1-2 searches), Returning (3+ searches)
+ * Uses Sequelize ORM with application-layer aggregation
+ */
 const newVsReturningCustomerSearchesService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
-        // Query to categorize customers as new or returning based on search frequency
-        // New customers: 1-2 searches
-        // Returning customers: 3+ searches
-        
-        const customerSearches = await sequelize.query(`
-            SELECT 
-                CASE 
-                    WHEN search_count <= 2 THEN 'New Customers'
-                    ELSE 'Returning Customers'
-                END as customer_type,
-                COUNT(DISTINCT customer_id) as unique_customers,
-                SUM(search_count) as total_searches,
-                ROUND(AVG(search_count), 2) as avg_searches_per_customer,
-                ROUND(AVG(avg_rating), 2) as avg_rating,
-                ROUND(AVG(avg_results), 2) as avg_results
-            FROM (
-                SELECT 
-                    s.customer_id,
-                    COUNT(DISTINCT s.search_id) as search_count,
-                    ROUND(AVG(s.max_rating), 2) as avg_rating,
-                    ROUND(AVG(s.total_results), 2) as avg_results
-                FROM searches s
-                WHERE s.customer_id IS NOT NULL
-                GROUP BY s.customer_id
-            ) customer_stats
-            GROUP BY customer_type
-            ORDER BY total_searches DESC
-        `, {
-            type: sequelize.QueryTypes.SELECT
+        // Fetch all searches with customer data
+        const searches = await models.Search.findAll({
+            attributes: ['customer_id', 'search_id', 'min_rating', 'total_results'],
+            where: {
+                customer_id: {
+                    [Op.ne]: null
+                }
+            },
+            raw: true
         });
+
+        // Group searches by customer and calculate stats
+        const customerStats = {};
         
-        response.status(200).json(customerSearches);
+        searches.forEach(search => {
+            const customerId = search.customer_id;
+            
+            if (!customerStats[customerId]) {
+                customerStats[customerId] = {
+                    search_count: 0,
+                    ratings: [],
+                    results: [],
+                    search_ids: new Set()
+                };
+            }
+            
+            customerStats[customerId].search_count++;
+            customerStats[customerId].search_ids.add(search.search_id);
+            if (search.min_rating != null) {
+                customerStats[customerId].ratings.push(parseFloat(search.min_rating));
+            }
+            if (search.total_results != null) {
+                customerStats[customerId].results.push(parseFloat(search.total_results));
+            }
+        });
+
+        // Segment customers and calculate aggregates
+        const segments = {
+            'New Customers': {
+                unique_customers: 0,
+                total_searches: 0,
+                avg_rating_sum: 0,
+                avg_results_sum: 0,
+                count: 0
+            },
+            'Returning Customers': {
+                unique_customers: 0,
+                total_searches: 0,
+                avg_rating_sum: 0,
+                avg_results_sum: 0,
+                count: 0
+            }
+        };
+
+        Object.entries(customerStats).forEach(([customerId, stats]) => {
+            const searchCount = stats.search_ids.size;
+            const segment = searchCount <= 2 ? 'New Customers' : 'Returning Customers';
+            
+            const avgRating = stats.ratings.length > 0 
+                ? stats.ratings.reduce((a, b) => a + b, 0) / stats.ratings.length
+                : 0;
+            const avgResults = stats.results.length > 0
+                ? stats.results.reduce((a, b) => a + b, 0) / stats.results.length
+                : 0;
+
+            segments[segment].unique_customers++;
+            segments[segment].total_searches += searchCount;
+            segments[segment].avg_rating_sum += avgRating;
+            segments[segment].avg_results_sum += avgResults;
+            segments[segment].count++;
+        });
+
+        // Calculate final metrics
+        const result = Object.entries(segments)
+            .filter(([_, data]) => data.unique_customers > 0)
+            .map(([type, data]) => ({
+                customer_type: type,
+                unique_customers: data.unique_customers,
+                total_searches: data.total_searches,
+                avg_searches_per_customer: parseFloat((data.total_searches / data.unique_customers).toFixed(2)),
+                avg_rating: parseFloat((data.avg_rating_sum / data.count).toFixed(2)),
+                avg_results: parseFloat((data.avg_results_sum / data.count).toFixed(2))
+            }))
+            .sort((a, b) => b.total_searches - a.total_searches);
+
+        response.status(200).json(result);
     } catch (error) {
-        console.log('Failed to fetch new vs returning customer searches', error);
-        response.status(500).json({ error: 'Failed to fetch data' });
+        console.error('Failed to fetch new vs returning customer searches:', error);
+        response.status(500).json({ error: 'Failed to fetch customer segment data' });
     }
-}
+};
 
 module.exports = { newVsReturningCustomerSearchesService };

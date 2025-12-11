@@ -1,11 +1,8 @@
-var express = require('express');
-var router = express.Router();
-var sequelize = require('../config/sequelize.config');
+const { Op, fn, col, where } = require('sequelize');
+const models = require('../models');
 
 const trendingKeywordService = async(request, response) => {
     try {
-        await sequelize.sync();
-        
         // Get current date
         const currentDate = new Date();
         
@@ -16,41 +13,33 @@ const trendingKeywordService = async(request, response) => {
         const previousWeekEnd = currentWeekStart;
         
         // Query to get search volumes for current week
-        const currentWeekData = await sequelize.query(`
-            SELECT 
-                search_keyword as keyword,
-                COUNT(*) as current_week_volume
-            FROM searches
-            WHERE search_date >= :currentWeekStart
-            AND search_date < :currentWeekEnd
-            AND search_keyword IS NOT NULL
-            AND search_keyword != ''
-            GROUP BY search_keyword
-        `, {
-            replacements: { 
-                currentWeekStart: currentWeekStart,
-                currentWeekEnd: currentWeekEnd
+        const currentWeekData = await models.Search.findAll({
+            attributes: [
+                ['search_keyword', 'keyword'],
+                [fn('COUNT', col('search_id')), 'current_week_volume']
+            ],
+            where: {
+                search_date: { [Op.gte]: currentWeekStart, [Op.lt]: currentWeekEnd },
+                search_keyword: { [Op.and]: [{ [Op.not]: null }, { [Op.ne]: '' }] }
             },
-            type: sequelize.QueryTypes.SELECT
+            group: ['search_keyword'],
+            subQuery: false,
+            raw: true
         });
         
         // Query to get search volumes for previous week
-        const previousWeekData = await sequelize.query(`
-            SELECT 
-                search_keyword as keyword,
-                COUNT(*) as previous_week_volume
-            FROM searches
-            WHERE search_date >= :previousWeekStart
-            AND search_date < :previousWeekEnd
-            AND search_keyword IS NOT NULL
-            AND search_keyword != ''
-            GROUP BY search_keyword
-        `, {
-            replacements: { 
-                previousWeekStart: previousWeekStart,
-                previousWeekEnd: previousWeekEnd
+        const previousWeekData = await models.Search.findAll({
+            attributes: [
+                ['search_keyword', 'keyword'],
+                [fn('COUNT', col('search_id')), 'previous_week_volume']
+            ],
+            where: {
+                search_date: { [Op.gte]: previousWeekStart, [Op.lt]: previousWeekEnd },
+                search_keyword: { [Op.and]: [{ [Op.not]: null }, { [Op.ne]: '' }] }
             },
-            type: sequelize.QueryTypes.SELECT
+            group: ['search_keyword'],
+            subQuery: false,
+            raw: true
         });
         
         // Merge and calculate WoW change
@@ -104,7 +93,7 @@ const trendingKeywordService = async(request, response) => {
         
         response.status(200).json(trendingKeywords);
     } catch (error) {
-        console.log('Failed to fetch trending keywords', error);
+        console.error('Failed to fetch trending keywords', error);
         response.status(500).json({ error: 'Failed to fetch data' });
     }
 }

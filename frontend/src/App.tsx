@@ -29,27 +29,27 @@ import { Users } from './components/Users';
 // Home Component
 const Home: React.FC = () => {
   const routes = [
-    { path: '/topSearchVolume', label: 'Top Search Volume', icon: '📊' },
-    { path: '/trendingKeywords', label: 'Trending Keywords', icon: '🔥' },
-    { path: '/attributeTrends', label: 'Attribute Trends', icon: '📈' },
-    { path: '/brandSearchVolume', label: 'Brand Search Volume', icon: '🏢' },
-    { path: '/categoryDemand', label: 'Category Demand', icon: '📦' },
-    { path: '/catergoryOrCollectionMappingAccuracy', label: 'Category/Collection Mapping', icon: '🎯' },
-    { path: '/conversionIntentFunnel', label: 'Conversion Intent Funnel', icon: '🔗' },
-    { path: '/crossSearchPatterns', label: 'Cross Search Patterns', icon: '🔄' },
-    { path: '/highExitSearches', label: 'High Exit Searches', icon: '🚪' },
-    { path: '/keywordClustering', label: 'Keyword Clustering', icon: '🔤' },
-    { path: '/lowResultSearches', label: 'Low Result Searches', icon: '❌' },
-    { path: '/newVsReturningCustomerSearches', label: 'New vs Returning Customers', icon: '👥' },
-    { path: '/priceIntentSegments', label: 'Price Intent Segments', icon: '💰' },
-    { path: '/ratingSensitivity', label: 'Rating Sensitivity', icon: '⭐' },
-    { path: '/searchAddToCartConversion', label: 'Search to Cart Conversion', icon: '🛒' },
-    { path: '/searchByLocationOrRegion', label: 'Search by Location/Region', icon: '🗺️' },
-    { path: '/searchFailRate', label: 'Search Fail Rate', icon: '⚠️' },
-    { path: '/seasonalityTrends', label: 'Seasonality Trends', icon: '📅' },
-    { path: '/synonymMisses', label: 'Synonym Misses', icon: '🔍' },
-    { path: '/zeroResultsSearches', label: 'Zero Results Searches', icon: '0️⃣' },
-    // { path: '/users', label: 'Users', icon: '👤' },
+    { path: '/topSearchVolume', label: 'Top Search Volume' },
+    { path: '/trendingKeywords', label: 'Trending Keywords' },
+    { path: '/attributeTrends', label: 'Attribute Trends' },
+    { path: '/brandSearchVolume', label: 'Brand Search Volume' },
+    { path: '/categoryDemand', label: 'Category Demand' },
+    { path: '/catergoryOrCollectionMappingAccuracy', label: 'Category/Collection Mapping' },
+    { path: '/conversionIntentFunnel', label: 'Conversion Intent Funnel' },
+    { path: '/crossSearchPatterns', label: 'Cross Search Patterns' },
+    { path: '/highExitSearches', label: 'High Exit Searches' },
+    { path: '/keywordClustering', label: 'Keyword Clustering' },
+    { path: '/lowResultSearches', label: 'Low Result Searches' },
+    { path: '/newVsReturningCustomerSearches', label: 'New vs Returning Customers' },
+    { path: '/priceIntentSegments', label: 'Price Intent Segments' },
+    { path: '/ratingSensitivity', label: 'Rating Sensitivity' },
+    { path: '/searchAddToCartConversion', label: 'Search to Cart Conversion' },
+    { path: '/searchByLocationOrRegion', label: 'Search by Location/Region' },
+    { path: '/searchFailRate', label: 'Search Fail Rate' },
+    { path: '/seasonalityTrends', label: 'Seasonality Trends' },
+    { path: '/synonymMisses', label: 'Synonym Misses' },
+    { path: '/zeroResultsSearches', label: 'Zero Results Searches' },
+    // { path: '/users', label: 'Users' },
   ];
 
   return (
@@ -63,39 +63,13 @@ const Home: React.FC = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={2}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {routes.map((route) => (
-          <Grid  key={route.path}>
-            <Link to={route.path} style={{ textDecoration: 'none' }}>
-              <Paper
-                sx={{
-                  p: 2,
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    boxShadow: 6,
-                    transform: 'translateY(-8px)',
-                    backgroundColor: '#f5f5f5',
-                  },
-                  minHeight: 120,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e0',
-                }}
-              >
-                <Box sx={{ fontSize: '2rem', mb: 1 }}>{route.icon}</Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {route.label}
-                </Typography>
-              </Paper>
-            </Link>
-          </Grid>
+          <Link key={route.path} to={route.path} style={{ textDecoration: 'none', color: '#1976d2' }}>
+            {route.label}
+          </Link>
         ))}
-      </Grid>
+      </Box>
     </Container>
   );
 };
