@@ -1,6 +1,266 @@
+// import React, { useEffect, useState } from 'react';
+// import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+// import { Box, CircularProgress, Alert, Card, CardContent, Typography, ToggleButton, ToggleButtonGroup, Table, Chip, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, LinearProgress } from '@mui/material';
+// import { fetchFromAPI } from '../utils';
+// import { API_PATHS } from '../constants';
+
+// interface NewVsReturningData {
+//   customer_type: string;
+//   unique_customers: number;
+//   total_searches: number;
+//   avg_searches_per_customer: number;
+//   avg_rating: number;
+//   avg_results: number;
+//   [key: string]: string | number;
+// }
+
+// const COLORS = ['#ff9999', '#66b3ff'];
+
+// export const NewVsReturningCustomerSearches: React.FC = () => {
+//   const [data, setData] = useState<NewVsReturningData[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+//   const [chartType, setChartType] = useState<'bar' | 'pie' | 'table'>('bar');
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         setLoading(true);
+//         const result: any = await fetchFromAPI(API_PATHS.newVsReturningCustomerSearches);
+        
+//         // Handle both array and nested array responses
+//         let processedData = Array.isArray(result) ? result : [];
+        
+//         // If result is an array with metadata object, extract the data array
+//         if (Array.isArray(result) && result.length > 0 && result[0] && Array.isArray(result[0])) {
+//           processedData = result[0];
+//         } else if (Array.isArray(result) && result.length > 1 && result[1] && result[1].rows) {
+//           processedData = result[1].rows;
+//         }
+        
+//         // Filter and process data
+//         const filteredData = processedData
+//           .filter((item: any) => item.customer_type && item.customer_type.trim() !== '')
+//           .map((item: any) => ({
+//             customer_type: item.customer_type,
+//             unique_customers: parseInt(item.unique_customers, 10),
+//             total_searches: parseInt(item.total_searches, 10),
+//             avg_searches_per_customer: parseFloat(item.avg_searches_per_customer),
+//             avg_rating: parseFloat(item.avg_rating),
+//             avg_results: parseFloat(item.avg_results)
+//           }))
+//           .sort((a: NewVsReturningData, b: NewVsReturningData) => b.total_searches - a.total_searches);
+        
+//         setData(filteredData);
+//       } catch (err) {
+//         setError(err instanceof Error ? err.message : 'Failed to fetch data');
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchData();
+//   }, []);
+
+//   const handleChartTypeChange = (
+//     event: React.MouseEvent<HTMLElement>,
+//     newChartType: 'bar' | 'pie' | 'table',
+//   ) => {
+//     if (newChartType !== null) {
+//       setChartType(newChartType);
+//     }
+//   };
+
+//   const totalSearches = data.reduce((sum, item) => sum + item.total_searches, 0);
+//   const totalCustomers = data.reduce((sum, item) => sum + item.unique_customers, 0);
+
+//   return (
+//     <Card sx={{ m: 2 }}>
+//       <CardContent>
+//         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+//           <Typography variant="h5">New vs Returning Customer Searches</Typography>
+//           <ToggleButtonGroup
+//             value={chartType}
+//             exclusive
+//             onChange={handleChartTypeChange}
+//             aria-label="chart type"
+//           >
+//             <ToggleButton value="bar" aria-label="bar chart">
+//               Bar Chart
+//             </ToggleButton>
+//             <ToggleButton value="pie" aria-label="pie chart">
+//               Pie Chart
+//             </ToggleButton>
+//             <ToggleButton value="table" aria-label="table">
+//               Table
+//             </ToggleButton>
+//           </ToggleButtonGroup>
+//         </Box>
+
+//         {/* Summary Statistics */}
+//         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}>
+//           <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+//             <Typography variant="caption" color="textSecondary">Total Customers</Typography>
+//             <Typography variant="h6">{totalCustomers.toLocaleString()}</Typography>
+//           </Box>
+//           <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+//             <Typography variant="caption" color="textSecondary">Total Searches</Typography>
+//             <Typography variant="h6">{totalSearches.toLocaleString()}</Typography>
+//           </Box>
+//         </Box>
+        
+//         {loading && <CircularProgress />}
+//         {error && <Alert severity="error">{error}</Alert>}
+//         {!loading && !error && data.length > 0 && (
+//           <>
+//             {chartType === 'bar' && (
+//               <Box sx={{ width: '100%', height: 400 }}>
+//                 <ResponsiveContainer width="100%" height="100%">
+//                   <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+//                     <CartesianGrid strokeDasharray="3 3" />
+//                     <XAxis dataKey="customer_type" angle={-45} textAnchor="end" height={80} />
+//                     <YAxis yAxisId="left" />
+//                     <YAxis yAxisId="right" orientation="right" />
+//                     <Tooltip />
+//                     <Legend />
+//                     <Bar yAxisId="left" dataKey="total_searches" fill="#8884d8" name="Total Searches" />
+//                     <Bar yAxisId="right" dataKey="unique_customers" fill="#82ca9d" name="Unique Customers" />
+//                   </BarChart>
+//                 </ResponsiveContainer>
+//               </Box>
+//             )}
+//             {chartType === 'pie' && (
+//               <Box sx={{ width: '100%', height: 400 }}>
+//                 <ResponsiveContainer width="100%" height="100%">
+//                   <PieChart>
+//                     <Pie
+//                       data={data}
+//                       dataKey="total_searches"
+//                       nameKey="customer_type"
+//                       cx="50%"
+//                       cy="50%"
+//                       outerRadius={120}
+//                       label
+//                     >
+//                       {data.map((entry, index) => (
+//                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+//                       ))}
+//                     </Pie>
+//                     <Tooltip />
+//                     <Legend />
+//                   </PieChart>
+//                 </ResponsiveContainer>
+//               </Box>
+//             )}
+//             {chartType === 'table' && (
+//               <TableContainer component={Paper}>
+//                 <Table>
+//                   <TableHead>
+//                     <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+//                       <TableCell sx={{ fontWeight: 'bold' }}>Customer Type</TableCell>
+//                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Unique Customers</TableCell>
+//                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Total Searches</TableCell>
+//                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>% of Searches</TableCell>
+//                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Avg Searches/Customer</TableCell>
+//                       <TableCell align="center" sx={{ fontWeight: 'bold' }}>Avg Rating</TableCell>
+//                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>Avg Results</TableCell>
+//                     </TableRow>
+//                   </TableHead>
+//                   <TableBody>
+//                     {data.map((item, index) => (
+//                       <TableRow key={index} hover>
+//                         <TableCell
+//                           sx={{
+//                             fontWeight: 'bold',
+//                             color: item.customer_type === 'New Customers' ? '#ff9999' : '#66b3ff'
+//                           }}
+//                         >
+//                           {item.customer_type}
+//                         </TableCell>
+//                         <TableCell align="right">{item.unique_customers.toLocaleString()}</TableCell>
+//                         <TableCell align="right">
+//                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
+//                             <Box sx={{ width: 80 }}>
+//                               <LinearProgress
+//                                 variant="determinate"
+//                                 value={(item.total_searches / totalSearches) * 100}
+//                                 sx={{
+//                                   height: 8,
+//                                   borderRadius: 4,
+//                                   backgroundColor: '#e0e0e0',
+//                                   '& .MuiLinearProgress-bar': {
+//                                     backgroundColor: COLORS[index % COLORS.length]
+//                                   }
+//                                 }}
+//                               />
+//                             </Box>
+//                             <span>{item.total_searches.toLocaleString()}</span>
+//                           </Box>
+//                         </TableCell>
+//                         <TableCell align="right">
+//                           {totalSearches > 0 
+//                             ? ((item.total_searches / totalSearches) * 100).toFixed(1) + '%'
+//                             : '0%'
+//                           }
+//                         </TableCell>
+//                         <TableCell align="right">{item.avg_searches_per_customer.toFixed(2)}</TableCell>
+//                         <TableCell align="center">
+//                           {'★'.repeat(Math.round(item.avg_rating))}
+//                           <Typography variant="caption">({item.avg_rating.toFixed(1)})</Typography>
+//                         </TableCell>
+//                         <TableCell align="right">{item.avg_results.toFixed(1)}</TableCell>
+//                       </TableRow>
+//                     ))}
+//                   </TableBody>
+//                 </Table>
+//               </TableContainer>
+//             )}
+//           </>
+//         )}
+//         {!loading && !error && data.length === 0 && (
+//           <Alert severity="info">No customer search data available</Alert>
+//         )}
+//       </CardContent>
+//     </Card>
+//   );
+// };
+
+// export default NewVsReturningCustomerSearches;
+
+
+
+
+// frontend/src/components/NewVsReturningCustomerSearches.tsx
 import React, { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Box, CircularProgress, Alert, Card, CardContent, Typography, ToggleButton, ToggleButtonGroup, Table, Chip, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, LinearProgress } from '@mui/material';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import {
+  Box,
+  CircularProgress,
+  Alert,
+  Card,
+  CardContent,
+  Typography,
+  ToggleButton,
+  ToggleButtonGroup,
+  TableContainer,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Paper,
+  TextField,
+  Button,
+} from '@mui/material';
 import { fetchFromAPI } from '../utils';
 import { API_PATHS } from '../constants';
 
@@ -8,216 +268,180 @@ interface NewVsReturningData {
   customer_type: string;
   unique_customers: number;
   total_searches: number;
-  avg_searches_per_customer: number;
-  avg_rating: number;
-  avg_results: number;
-  [key: string]: string | number;
+  avg_searches_per_customer?: number;
+  avg_rating?: number;
+  avg_results?: number;
+  [key: string]: any;
 }
 
-const COLORS = ['#ff9999', '#66b3ff'];
+function formatDate(d: Date) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-export const NewVsReturningCustomerSearches: React.FC = () => {
+const COLORS = ['#66b3ff', '#ff9999', '#82ca9d', '#ffc658'];
+
+const NewVsReturningCustomerSearches: React.FC = () => {
   const [data, setData] = useState<NewVsReturningData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [chartType, setChartType] = useState<'bar' | 'pie' | 'table'>('bar');
+  const [view, setView] = useState<'chart' | 'table'>('chart');
+
+  // date filter states
+  const today = new Date();
+  const defaultEnd = formatDate(today);
+  const defaultStart = formatDate(new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000)); // last 28 days
+
+  const [startDate, setStartDate] = useState<string>(defaultStart);
+  const [endDate, setEndDate] = useState<string>(defaultEnd);
+  const [appliedStart, setAppliedStart] = useState<string>(defaultStart);
+  const [appliedEnd, setAppliedEnd] = useState<string>(defaultEnd);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const result: any = await fetchFromAPI(API_PATHS.newVsReturningCustomerSearches);
-        
-        // Handle both array and nested array responses
+        const params = new URLSearchParams();
+        if (appliedStart) params.append('startDate', appliedStart);
+        if (appliedEnd) params.append('endDate', appliedEnd);
+        const url = `${API_PATHS.newVsReturningCustomerSearches}${params.toString() ? `?${params.toString()}` : ''}`;
+
+        const result: any = await fetchFromAPI(url);
+
         let processedData = Array.isArray(result) ? result : [];
-        
-        // If result is an array with metadata object, extract the data array
-        if (Array.isArray(result) && result.length > 0 && result[0] && Array.isArray(result[0])) {
+        if (Array.isArray(result) && result.length > 0 && Array.isArray(result[0])) {
           processedData = result[0];
         } else if (Array.isArray(result) && result.length > 1 && result[1] && result[1].rows) {
           processedData = result[1].rows;
         }
-        
-        // Filter and process data
-        const filteredData = processedData
-          .filter((item: any) => item.customer_type && item.customer_type.trim() !== '')
+
+        const normalized: NewVsReturningData[] = (processedData || [])
+          .filter((item: any) => item && (item.customer_type || item.customerType))
           .map((item: any) => ({
-            customer_type: item.customer_type,
-            unique_customers: parseInt(item.unique_customers, 10),
-            total_searches: parseInt(item.total_searches, 10),
-            avg_searches_per_customer: parseFloat(item.avg_searches_per_customer),
-            avg_rating: parseFloat(item.avg_rating),
-            avg_results: parseFloat(item.avg_results)
+            customer_type: item.customer_type ?? item.customerType,
+            unique_customers: Number(item.unique_customers ?? item.unique_customers_count ?? item.unique_customers ?? 0),
+            total_searches: Number(item.total_searches ?? item.total_searches_count ?? item.total_searches ?? 0),
+            avg_searches_per_customer: Number(item.avg_searches_per_customer ?? item.avg_searches_per_customer ?? 0),
+            avg_rating: Number(item.avg_rating ?? 0),
+            avg_results: Number(item.avg_results ?? 0),
           }))
-          .sort((a: NewVsReturningData, b: NewVsReturningData) => b.total_searches - a.total_searches);
-        
-        setData(filteredData);
+          .sort((a, b) => b.total_searches - a.total_searches);
+
+        setData(normalized);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        setData([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
 
-  const handleChartTypeChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newChartType: 'bar' | 'pie' | 'table',
-  ) => {
-    if (newChartType !== null) {
-      setChartType(newChartType);
-    }
+    fetchData();
+  }, [appliedStart, appliedEnd]);
+
+  const onApply = () => {
+    setAppliedStart(startDate);
+    setAppliedEnd(endDate);
   };
 
-  const totalSearches = data.reduce((sum, item) => sum + item.total_searches, 0);
-  const totalCustomers = data.reduce((sum, item) => sum + item.unique_customers, 0);
+  const onReset = () => {
+    setStartDate(defaultStart);
+    setEndDate(defaultEnd);
+    setAppliedStart(defaultStart);
+    setAppliedEnd(defaultEnd);
+  };
+
+  // Prepare stacked bar data: single stacked bar showing how total search volume splits by customer type
+  const chartKeys = data.map(d => d.customer_type);
+  const stackedDatum = [
+    chartKeys.reduce((acc, key) => {
+      const row = data.find(d => d.customer_type === key);
+      acc[key] = row ? row.total_searches : 0;
+      return acc;
+    }, { label: 'Search Volume' } as any),
+  ];
 
   return (
     <Card sx={{ m: 2 }}>
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h5">New vs Returning Customer Searches</Typography>
-          <ToggleButtonGroup
-            value={chartType}
-            exclusive
-            onChange={handleChartTypeChange}
-            aria-label="chart type"
-          >
-            <ToggleButton value="bar" aria-label="bar chart">
-              Bar Chart
-            </ToggleButton>
-            <ToggleButton value="pie" aria-label="pie chart">
-              Pie Chart
-            </ToggleButton>
-            <ToggleButton value="table" aria-label="table">
-              Table
-            </ToggleButton>
-          </ToggleButtonGroup>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <TextField
+              label="Start"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+            <TextField
+              label="End"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+            <Button variant="outlined" onClick={onApply} size="small">Apply</Button>
+            <Button variant="text" onClick={onReset} size="small">Reset</Button>
+
+            <ToggleButtonGroup value={view} exclusive onChange={(e, v) => v && setView(v)} size="small">
+              <ToggleButton value="chart">Stacked Chart</ToggleButton>
+              <ToggleButton value="table">Table</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
         </Box>
 
-        {/* Summary Statistics */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}>
-          <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="caption" color="textSecondary">Total Customers</Typography>
-            <Typography variant="h6">{totalCustomers.toLocaleString()}</Typography>
-          </Box>
-          <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="caption" color="textSecondary">Total Searches</Typography>
-            <Typography variant="h6">{totalSearches.toLocaleString()}</Typography>
-          </Box>
-        </Box>
-        
         {loading && <CircularProgress />}
         {error && <Alert severity="error">{error}</Alert>}
-        {!loading && !error && data.length > 0 && (
-          <>
-            {chartType === 'bar' && (
-              <Box sx={{ width: '100%', height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="customer_type" angle={-45} textAnchor="end" height={80} />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="total_searches" fill="#8884d8" name="Total Searches" />
-                    <Bar yAxisId="right" dataKey="unique_customers" fill="#82ca9d" name="Unique Customers" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-            {chartType === 'pie' && (
-              <Box sx={{ width: '100%', height: 400 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data}
-                      dataKey="total_searches"
-                      nameKey="customer_type"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={120}
-                      label
-                    >
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Box>
-            )}
-            {chartType === 'table' && (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Customer Type</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Unique Customers</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Total Searches</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>% of Searches</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Avg Searches/Customer</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Avg Rating</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>Avg Results</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {data.map((item, index) => (
-                      <TableRow key={index} hover>
-                        <TableCell
-                          sx={{
-                            fontWeight: 'bold',
-                            color: item.customer_type === 'New Customers' ? '#ff9999' : '#66b3ff'
-                          }}
-                        >
-                          {item.customer_type}
-                        </TableCell>
-                        <TableCell align="right">{item.unique_customers.toLocaleString()}</TableCell>
-                        <TableCell align="right">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
-                            <Box sx={{ width: 80 }}>
-                              <LinearProgress
-                                variant="determinate"
-                                value={(item.total_searches / totalSearches) * 100}
-                                sx={{
-                                  height: 8,
-                                  borderRadius: 4,
-                                  backgroundColor: '#e0e0e0',
-                                  '& .MuiLinearProgress-bar': {
-                                    backgroundColor: COLORS[index % COLORS.length]
-                                  }
-                                }}
-                              />
-                            </Box>
-                            <span>{item.total_searches.toLocaleString()}</span>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="right">
-                          {totalSearches > 0 
-                            ? ((item.total_searches / totalSearches) * 100).toFixed(1) + '%'
-                            : '0%'
-                          }
-                        </TableCell>
-                        <TableCell align="right">{item.avg_searches_per_customer.toFixed(2)}</TableCell>
-                        <TableCell align="center">
-                          {'★'.repeat(Math.round(item.avg_rating))}
-                          <Typography variant="caption">({item.avg_rating.toFixed(1)})</Typography>
-                        </TableCell>
-                        <TableCell align="right">{item.avg_results.toFixed(1)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </>
+
+        {!loading && !error && data.length > 0 && view === 'chart' && (
+          <Box sx={{ width: '100%', height: 420 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stackedDatum} layout="vertical" margin={{ top: 20, right: 20, left: 40, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="label" />
+                <Tooltip />
+                <Legend />
+                {chartKeys.map((key, idx) => (
+                  <Bar key={key} dataKey={key} stackId="a" fill={COLORS[idx % COLORS.length]} name={key} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
         )}
+
+        {!loading && !error && data.length > 0 && view === 'table' && (
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableRow>
+                  <TableCell><strong>customer_type</strong></TableCell>
+                  <TableCell align="right"><strong>search_volume</strong></TableCell>
+                  <TableCell align="right"><strong>unique_users</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.map((row, idx) => (
+                  <TableRow key={idx} hover>
+                    <TableCell sx={{ fontWeight: 'bold' }}>{row.customer_type}</TableCell>
+                    <TableCell align="right">{row.total_searches}</TableCell>
+                    <TableCell align="right">{row.unique_customers}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
         {!loading && !error && data.length === 0 && (
-          <Alert severity="info">No customer search data available</Alert>
+          <Alert severity="info">No customer search data available for the selected range</Alert>
         )}
       </CardContent>
     </Card>

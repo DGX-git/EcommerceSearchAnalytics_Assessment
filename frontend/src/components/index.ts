@@ -1,15 +1,39 @@
+// export { TopSearchVolume } from './TopSearchVolume';
+// export { TrendingKeywords } from './TrendingKeywords';
+// export { AttributeTrends } from './AttributeTrends';
+// export { BrandSearchVolume } from './BrandSearchVolume';
+// export { CategoryDemand } from './CategoryDemand';
+// export { CategoryOrCollectionMappingAccuracy } from './CategoryOrCollectionMappingAccuracy';
+// export { ConversionIntentFunnel } from './ConversionIntentFunnel';
+// export { CrossSearchPatterns } from './CrossSearchPatterns';
+// export { HighExitSearches } from './HighExitSearches';
+// export { KeywordClustering } from './KeywordClustering';
+// export { LowResultSearches } from './LowResultSearches';
+// export { NewVsReturningCustomerSearches } from './NewVsReturningCustomerSearches';
+// export { PriceIntentSegments } from './PriceIntentSegments';
+// export { RatingSensitivity } from './RatingSensitivity';
+// export { SearchAddToCartConversion } from './SearchAddToCartConversion';
+// export { SearchByLocationOrRegion } from './SearchByLocationOrRegion';
+// export { SearchFailRate } from './SearchFailRate';
+// export { SeasonalityTrends } from './SeasonalityTrends';
+// export { SynonymMisses } from './SynonymMisses';
+// export { ZeroResultsSearches } from './ZeroResultsSearches';
+// // export { Users } from './Users';
+
+
+
 export { TopSearchVolume } from './TopSearchVolume';
 export { TrendingKeywords } from './TrendingKeywords';
-export { AttributeTrends } from './AttributeTrends';
+export { default as AttributeTrends } from './AttributeTrends';
 export { BrandSearchVolume } from './BrandSearchVolume';
-export { CategoryDemand } from './CategoryDemand';
-export { CategoryOrCollectionMappingAccuracy } from './CategoryOrCollectionMappingAccuracy';
-export { ConversionIntentFunnel } from './ConversionIntentFunnel';
-export { CrossSearchPatterns } from './CrossSearchPatterns';
-export { HighExitSearches } from './HighExitSearches';
+export { default as CategoryDemand } from './CategoryDemand';
+export { default as CategoryOrCollectionMappingAccuracy } from './CategoryOrCollectionMappingAccuracy';
+export { default as ConversionIntentFunnel } from './ConversionIntentFunnel';
+export { default as CrossSearchPatterns } from './CrossSearchPatterns';
+export { default as HighExitSearches } from './HighExitSearches';
 export { KeywordClustering } from './KeywordClustering';
-export { LowResultSearches } from './LowResultSearches';
-export { NewVsReturningCustomerSearches } from './NewVsReturningCustomerSearches';
+export { default as LowResultSearches } from './LowResultSearches';
+export { default as NewVsReturningCustomerSearches } from './NewVsReturningCustomerSearches';
 export { PriceIntentSegments } from './PriceIntentSegments';
 export { RatingSensitivity } from './RatingSensitivity';
 export { SearchAddToCartConversion } from './SearchAddToCartConversion';
